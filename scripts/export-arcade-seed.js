@@ -86,12 +86,14 @@ const esc = (v) => {
     .join(',\n');
   sql += ';\n\n';
 
-  // alternativa
+  // alternativa — sem id explícito (auto-increment).
+  // O id é interno e não é referenciado externamente; usar explícito
+  // só causa colisão se houver lixo prévio no banco.
   sql += '-- ===== alternativa =====\n';
-  sql += 'INSERT INTO alternativa (id, id_quiz, texto, eh_correta, file) VALUES\n';
+  sql += 'INSERT INTO alternativa (id_quiz, texto, eh_correta, file) VALUES\n';
   sql += alternativas
     .map((a) =>
-      `  (${a.id}, ${a.id_quiz}, ${esc(a.texto)}, ${a.eh_correta ? 1 : 0}, ${esc(a.file)})`
+      `  (${a.id_quiz}, ${esc(a.texto)}, ${a.eh_correta ? 1 : 0}, ${esc(a.file)})`
     )
     .join(',\n');
   sql += ';\n\n';
