@@ -73,9 +73,18 @@ exports.submitAnswer = async (req, res, next) => {
       }
     }
 
+    // Quando o jogador errou, devolvemos o id da alternativa correta pra que o
+    // cliente destaque visualmente qual era a certa (fecha o loop pedagógico).
+    // Em acerto omitimos (a alternativa escolhida já é a correta).
+    let idAlternativaCorreta = null;
+    if (!foiCorreta) {
+      idAlternativaCorreta = await historicoModel.getCorrectAlternativeId(id_quiz);
+    }
+
     res.json({
       foi_correta: foiCorreta,
       feedback,
+      id_alternativa_correta: idAlternativaCorreta,
       xp: xpInfo, // null se guest, erro ou resposta errada
     });
   } catch (err) {
