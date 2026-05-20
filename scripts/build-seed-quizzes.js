@@ -113,6 +113,14 @@ sql += '-- Popula quiz + alternativa + feedback a partir do schema novo,\n';
 sql += '-- convertendo os INSERTs legados de tables.sql.\n';
 sql += '-- ============================================================\n\n';
 
+// Limpeza prévia: alternativa não tem unique key, então tentativas
+// anteriores que falharam no final acumularam duplicatas. Apaga e
+// re-insere a partir do zero. Quiz e feedback são protegidos por PK
+// (id e id_quiz respectivamente), então INSERT IGNORE basta.
+sql += '-- ===== limpeza para tornar a migration idempotente =====\n';
+sql += 'DELETE FROM alternativa;\n';
+sql += 'DELETE FROM feedback;\n\n';
+
 // quiz inserts com id explícito
 sql += '-- ===== quiz =====\n';
 sql += 'INSERT IGNORE INTO quiz (id, id_assunto, pergunta, dificuldade) VALUES\n';

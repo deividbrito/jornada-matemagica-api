@@ -7,6 +7,10 @@
 -- convertendo os INSERTs legados de tables.sql.
 -- ============================================================
 
+-- ===== limpeza para tornar a migration idempotente =====
+DELETE FROM alternativa;
+DELETE FROM feedback;
+
 -- ===== quiz =====
 INSERT IGNORE INTO quiz (id, id_assunto, pergunta, dificuldade) VALUES
   (1, 1, 'Qual é a leitura correta do número 307?', '1'),
