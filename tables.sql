@@ -874,7 +874,7 @@ INSERT INTO Feedback (id_quiz, explicacacao) VALUES
 (317, 'Ao arredondar 1.789 para a centena mais próxima, observe as dezenas. Como são 80, arredonda-se para 1.800.'),
 (318, 'Para encontrar o milhar mais próximo de 6.700, observe as centenas. Como são 700, o milhar mais próximo é 7.000.'),
 (319, 'Ao arredondar 66 para a dezena mais próxima, observe a unidade. Como é 6, arredonda-se para 70.'),
-(320, 'Para encontrar o múltiplo de 10 mais próximo de 12, observe as unidades. Como é 2, arredonda-se para 10.')
+(320, 'Para encontrar o múltiplo de 10 mais próximo de 12, observe as unidades. Como é 2, arredonda-se para 10.');
 
 -- Questões nível 2
 INSERT INTO Quiz (id_assunto, pergunta, dificuldade, alternativa1, alternativa2, alternativa3, alternativa4) VALUES
