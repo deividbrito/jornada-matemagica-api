@@ -33,51 +33,80 @@ function readMigrationFiles() {
  * Quebra um arquivo SQL em comandos individuais respeitando blocos
  * `DELIMITER //` ... `DELIMITER ;` usados em stored procedures.
  * mysql2 não interpreta DELIMITER (que é metacomando do cliente).
+ *
+ * Conhece string literais ('...' com '' como escape) para não quebrar
+ * statements quando o delimitador aparece dentro de uma string —
+ * comum em seeds com texto em português que contêm `;`.
  */
 function splitSqlStatements(sql) {
   const statements = [];
-  const lines = sql.split(/\r?\n/);
-  let current = '';
   let delimiter = ';';
 
-  // Remove linhas que são 100% comentário `-- ...`. Statements podem ter
-  // comentários no topo + SQL em seguida — só queremos descartar quando NADA
-  // resta de SQL real.
-  const stripFullLineComments = (block) =>
-    block
-      .split(/\r?\n/)
-      .filter((l) => !/^\s*--/.test(l))
-      .join('\n')
-      .trim();
+  // Strip top-level `-- comentário` LINHA (não dentro de string).
+  // Mais simples processar antes do tokenizer.
+  const noLineComments = sql
+    .split(/\r?\n/)
+    .map((l) => (/^\s*--/.test(l) ? '' : l))
+    .join('\n');
 
-  const pushIfMeaningful = () => {
-    const stripped = stripFullLineComments(current);
-    if (stripped) {
-      statements.push(stripped);
-    }
+  let current = '';
+  let inString = false;
+
+  const flush = () => {
+    const trimmed = current.trim();
+    if (trimmed) statements.push(trimmed);
     current = '';
   };
 
-  for (const rawLine of lines) {
-    const line = rawLine;
-    const delimMatch = line.trim().match(/^DELIMITER\s+(\S+)\s*$/i);
-    if (delimMatch) {
-      pushIfMeaningful();
-      delimiter = delimMatch[1];
+  let i = 0;
+  while (i < noLineComments.length) {
+    const c = noLineComments[i];
+
+    // Detecta DELIMITER no início de linha (fora de string)
+    if (!inString && (i === 0 || noLineComments[i - 1] === '\n')) {
+      const restOfLine = noLineComments.slice(i).split('\n', 1)[0];
+      const delimMatch = restOfLine.trim().match(/^DELIMITER\s+(\S+)\s*$/i);
+      if (delimMatch) {
+        flush();
+        delimiter = delimMatch[1];
+        i += restOfLine.length + 1; // +1 pula o \n
+        continue;
+      }
+    }
+
+    if (inString) {
+      current += c;
+      if (c === "'") {
+        if (noLineComments[i + 1] === "'") {
+          current += "'";
+          i += 2;
+          continue;
+        }
+        inString = false;
+      }
+      i++;
       continue;
     }
 
-    current += line + '\n';
-
-    // Procura o delimiter atual no fim do conteúdo acumulado
-    const trimmedCurrent = current.trim();
-    if (trimmedCurrent.endsWith(delimiter)) {
-      current = trimmedCurrent.slice(0, -delimiter.length);
-      pushIfMeaningful();
+    if (c === "'") {
+      inString = true;
+      current += c;
+      i++;
+      continue;
     }
+
+    // Match do delimitador (pode ter mais de 1 char, ex.: //)
+    if (noLineComments.slice(i, i + delimiter.length) === delimiter) {
+      flush();
+      i += delimiter.length;
+      continue;
+    }
+
+    current += c;
+    i++;
   }
 
-  pushIfMeaningful();
+  flush();
   return statements;
 }
 
